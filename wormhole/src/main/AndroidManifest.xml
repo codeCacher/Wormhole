@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.codecacher.wormhole">
+
+    <application>
+        <receiver android:name="com.codecacher.wormhole.ChannelReceivera" />
+        <receiver
+            android:name="com.codecacher.wormhole.ChannelReceiverb"
+            android:process=":b" />
+    </application>
+</manifest>
+
+
