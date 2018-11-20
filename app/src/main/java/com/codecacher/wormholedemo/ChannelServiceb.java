@@ -7,6 +7,7 @@ import android.support.annotation.Nullable;
 
 import com.codecacher.wormhole.IPCProxy;
 
+@Deprecated
 public class ChannelServiceb extends Service {
     @Nullable
     @Override

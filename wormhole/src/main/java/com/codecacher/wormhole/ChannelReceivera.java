@@ -8,6 +8,7 @@ import android.os.IBinder;
 import android.support.annotation.RequiresApi;
 import android.text.TextUtils;
 
+@Deprecated
 @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class ChannelReceivera extends ChannelReceiver {
 
