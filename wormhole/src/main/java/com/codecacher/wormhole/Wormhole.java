@@ -12,7 +12,7 @@ public class Wormhole {
     private static Wormhole INSTANCE = new Wormhole();
 
     private ServiceManager mManager = new ServiceManager();
-    private SparseArray<IChannel<ProcessNode, ServiceManager>> channels = new SparseArray<>();
+    private SparseArray<IConnector<ProcessNode, IChannel>> connnectors = new SparseArray<>();
     private Context mContext;
 
     public static Wormhole getInstance() {
@@ -40,26 +40,26 @@ public class Wormhole {
     }
 
     //client
-    public void connect(String process, ChannelConnection<ServiceManager> conn) {
+    public void connect(String process, ChannelConnection<IChannel> conn) {
         connect(process, conn, CHANNEL_TYPE_SERVICE);
     }
 
     //client
-    public void connect(String process, ChannelConnection<ServiceManager> conn, int channelType) {
-        IChannel<ProcessNode, ServiceManager> channel = channels.get(channelType);
-        if (channel == null) {
+    public void connect(String process, ChannelConnection<IChannel> conn, int channelType) {
+        IConnector<ProcessNode, IChannel> connector = connnectors.get(channelType);
+        if (connector == null) {
             switch (channelType) {
                 case CHANNEL_TYPE_SERVICE:
-                    channel = new ServiceChannel();
+                    connector = new ServiceConnector();
                     break;
                 case CHANNEL_TYPE_BROADCAST:
-                    channel = new BroadCastReceiverChannel();
+                    connector = new BroadCastReceiverConnector();
                     break;
             }
-            channels.put(CHANNEL_TYPE_SERVICE, channel);
+            connnectors.put(CHANNEL_TYPE_SERVICE, connector);
         }
-        if (channel != null) {
-            channel.connect(new ProcessNode(process), conn);
+        if (connector != null) {
+            connector.connect(new ProcessNode(process), conn);
         }
     }
 

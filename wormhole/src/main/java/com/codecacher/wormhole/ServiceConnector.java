@@ -6,9 +6,9 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 
-public class ServiceChannel implements IChannel<ProcessNode, ServiceManager> {
+public class ServiceConnector implements IConnector<ProcessNode, IChannel> {
     @Override
-    public void connect(ProcessNode node, final ChannelConnection<ServiceManager> conn) {
+    public void connect(ProcessNode node, final ChannelConnection<IChannel> conn) {
         Context context = Wormhole.getInstance().getContext();
         //TODO get service name from node
         ComponentName componentName = new ComponentName(context.getPackageName(), "com.codecacher.wormholedemo.ChannelServiceb");
@@ -18,12 +18,8 @@ public class ServiceChannel implements IChannel<ProcessNode, ServiceManager> {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
                 IIPCProxy proxy = IIPCProxy.Stub.asInterface(service);
-                ServiceManager serviceManager = null;
-                if (proxy != null) {
-                    serviceManager = Wormhole.getInstance().getServiceManager();
-                    serviceManager.setProxy(proxy);
-                }
-                conn.onChannelConnected(serviceManager);
+                BinderChannel binderChannel = new BinderChannel(proxy);
+                conn.onChannelConnected(binderChannel);
             }
 
             @Override

@@ -1,6 +1,6 @@
 package com.codecacher.wormhole;
 
-public interface ChannelConnection<T> {
-    void onChannelConnected(T service);
+public interface ChannelConnection<T extends IChannel> {
+    void onChannelConnected(T channel);
     void onChannelDisconnected();
 }

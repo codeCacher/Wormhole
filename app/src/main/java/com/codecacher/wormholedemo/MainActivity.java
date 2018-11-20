@@ -6,21 +6,22 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
+import com.codecacher.wormhole.BinderChannel;
 import com.codecacher.wormhole.ChannelConnection;
-import com.codecacher.wormhole.ChannelReceiver;
-import com.codecacher.wormhole.ChannelReceiverb;
-import com.codecacher.wormhole.IServiceManager;
-import com.codecacher.wormhole.ServiceManager;
+import com.codecacher.wormhole.IChannel;
 import com.codecacher.wormhole.Wormhole;
+
+import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
 
-    IServiceManager mServiceManager = null;
+    IChannel binderChannel = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,12 +43,15 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.getService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Wormhole.getInstance().connect(Application.getProcessName() + ".b", new ChannelConnection<ServiceManager>() {
+                Wormhole.getInstance().connect(Application.getProcessName() + ".b", new ChannelConnection<IChannel>() {
                     @Override
-                    public void onChannelConnected(ServiceManager serviceManager) {
-                        mServiceManager = serviceManager;
-                        IBinder binder = mServiceManager.getService(IBService.class);
-                        IBService service = IBService.Stub.asInterface(binder);
+                    public void onChannelConnected(IChannel channel) {
+                        binderChannel = channel;
+                        IBService service = binderChannel.getService(IBService.class);
+                        if (service == null) {
+                            Log.e("cuishun", "get service failed!");
+                            return;
+                        }
                         try {
                             String name = service.getName(10220);
                             Log.e("cuishun", name);
@@ -58,9 +62,9 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onChannelDisconnected() {
-                        mServiceManager = null;
+                        binderChannel = null;
                     }
-                }, Wormhole.CHANNEL_TYPE_BROADCAST);
+                }, Wormhole.CHANNEL_TYPE_SERVICE);
             }
         });
     }

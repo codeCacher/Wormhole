@@ -19,26 +19,26 @@ public class ChannelReceiverb extends ChannelReceiver {
         if (intent == null || TextUtils.isEmpty(intent.getAction())) {
             return;
         }
-        if (BroadCastReceiverChannel.ACTION_REQ_CONNECT.equals(intent.getAction())) {
+        if (BroadCastReceiverConnector.ACTION_REQ_CONNECT.equals(intent.getAction())) {
             //req to establish channel
-            String process = intent.getStringExtra(BroadCastReceiverChannel.DATA_PROCESS_NAME);
+            String process = intent.getStringExtra(BroadCastReceiverConnector.DATA_PROCESS_NAME);
             //TODO get component from process
             ComponentName componentName = new ComponentName(context.getPackageName(), "com.codecacher.wormhole.ChannelReceivera");
             Intent ackIntent = new Intent();
             ackIntent.setComponent(componentName);
             Bundle bundle = new Bundle();
-            bundle.putBinder(BroadCastReceiverChannel.DATA_BINDER, new IPCProxy());
+            bundle.putBinder(BroadCastReceiverConnector.DATA_BINDER, new IPCProxy());
             ackIntent.putExtras(bundle);
-            ackIntent.setAction(BroadCastReceiverChannel.ACTION_RES_CONNECTED);
+            ackIntent.setAction(BroadCastReceiverConnector.ACTION_RES_CONNECTED);
             context.sendBroadcast(ackIntent);
             return;
         }
-        if (BroadCastReceiverChannel.ACTION_RES_CONNECTED.equals(intent.getAction())) {
+        if (BroadCastReceiverConnector.ACTION_RES_CONNECTED.equals(intent.getAction())) {
             Bundle extras = intent.getExtras();
             if (extras == null) {
                 return;
             }
-            IBinder binder = extras.getBinder(BroadCastReceiverChannel.DATA_BINDER);
+            IBinder binder = extras.getBinder(BroadCastReceiverConnector.DATA_BINDER);
             if (mCallBack != null) {
                 mCallBack.onConnect(binder);
             }

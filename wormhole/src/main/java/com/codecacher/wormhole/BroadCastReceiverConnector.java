@@ -1,14 +1,13 @@
 package com.codecacher.wormhole;
 
 import android.app.Application;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.IBinder;
 
-public class BroadCastReceiverChannel implements IChannel<ProcessNode, ServiceManager> {
+public class BroadCastReceiverConnector implements IConnector<ProcessNode, IChannel> {
     //cmd action
     private static final String SUFIX = Wormhole.getInstance().getContext().getPackageName();
     public static final String ACTION_REQ_CONNECT = SUFIX + "action_req_connect";
@@ -19,19 +18,15 @@ public class BroadCastReceiverChannel implements IChannel<ProcessNode, ServiceMa
     public static final String DATA_BINDER = "data_binder";
 
     @Override
-    public void connect(ProcessNode node, final ChannelConnection<ServiceManager> conn) {
+    public void connect(ProcessNode node, final ChannelConnection<IChannel> conn) {
         Context context = Wormhole.getInstance().getContext();
         ChannelReceiver processReceiver = ProcessHelper.getProcessReceiver();
         processReceiver.setCallBack(new ConnectCallBack() {
             @Override
             public void onConnect(IBinder binder) {
-                ServiceManager serviceManager = null;
                 IIPCProxy proxy = IIPCProxy.Stub.asInterface(binder);
-                if (proxy != null) {
-                    serviceManager = Wormhole.getInstance().getServiceManager();
-                    serviceManager.setProxy(proxy);
-                }
-                conn.onChannelConnected(serviceManager);
+                BinderChannel binderChannel = new BinderChannel(proxy);
+                conn.onChannelConnected(binderChannel);
             }
         });
         context.registerReceiver(processReceiver, new IntentFilter());
