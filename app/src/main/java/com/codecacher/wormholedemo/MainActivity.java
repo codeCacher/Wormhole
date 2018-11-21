@@ -6,12 +6,14 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
 import com.codecacher.wormhole.ChannelConnection;
+import com.codecacher.wormhole.ConnectorType;
 import com.codecacher.wormhole.IClientChannel;
 import com.codecacher.wormhole.Wormhole;
 
@@ -39,9 +41,12 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.getService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Wormhole.getInstance().connect(Application.getProcessName() + ".b", new ChannelConnection<IClientChannel>() {
+                final long start = SystemClock.elapsedRealtime();
+                Wormhole.getInstance().connect(Application.getProcessName() + ":b", new ChannelConnection<IClientChannel>() {
                     @Override
                     public void onChannelConnected(IClientChannel channel) {
+                        long duration = SystemClock.elapsedRealtime() - start;
+                        Log.e("cuishun", "duration:" + duration);
                         binderChannel = channel;
                         IBService service = binderChannel.getService(IBService.class);
                         if (service == null) {
@@ -60,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onChannelDisconnected() {
                         binderChannel = null;
                     }
-                }, Wormhole.CONNECTOR_TYPE_SERVICE);
+                }, ConnectorType.SERVICE_CONNECTOR);
             }
         });
     }

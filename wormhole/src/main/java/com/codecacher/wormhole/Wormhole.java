@@ -5,8 +5,8 @@ import android.util.SparseArray;
 
 public class Wormhole {
 
-    public static final int CONNECTOR_TYPE_SERVICE = 101;
-    public static final int CONNECTOR_TYPE_BROADCAST = 102;
+    static final int CONNECTOR_TYPE_SERVICE = 101;
+    static final int CONNECTOR_TYPE_BROADCAST = 102;
 
     private static Wormhole INSTANCE = new Wormhole();
 
@@ -45,14 +45,14 @@ public class Wormhole {
 
     //client
     public void connect(String process, ChannelConnection<IClientChannel> conn) {
-        connect(process, conn, CONNECTOR_TYPE_SERVICE);
+        connect(process, conn, ConnectorType.SERVICE_CONNECTOR);
     }
 
     //client
-    public void connect(String process, ChannelConnection<IClientChannel> conn, int channelType) {
-        IConnector<ProcessNode, IClientChannel> connector = connnectors.get(channelType);
+    public void connect(String process, ChannelConnection<IClientChannel> conn, ConnectorType connectorType) {
+        IConnector<ProcessNode, IClientChannel> connector = connnectors.get(connectorType.getType());
         if (connector == null) {
-            switch (channelType) {
+            switch (connectorType.getType()) {
                 case CONNECTOR_TYPE_SERVICE:
                     connector = new ServiceConnector();
                     break;

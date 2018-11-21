@@ -1,5 +1,7 @@
 package com.codecacher.wormhole;
 
+import android.app.Application;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -12,7 +14,8 @@ import android.text.TextUtils;
 @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class ChannelReceivera extends ChannelReceiver {
 
-    private ConnectCallBack mCallBack;
+//    private ConnectCallBack mCallBack;
+
     @Override
     public void onReceive(Context context, Intent intent) {
         if (intent == null || TextUtils.isEmpty(intent.getAction())) {
@@ -22,14 +25,15 @@ public class ChannelReceivera extends ChannelReceiver {
             //req to establish channel
             String process = intent.getStringExtra(BroadCastReceiverConnector.DATA_PROCESS_NAME);
             //TODO get component from process
-//            ComponentName componentName = new ComponentName(context.getPackageName(), "com.codecacher.wormhole.ChannelReceivera");
-//            Intent ackIntent = new Intent();
-//            ackIntent.setComponent(componentName);
-//            Bundle bundle = new Bundle();
-//            bundle.putBinder(BroadCastReceiverConnector.DATA_BINDER, new IPCProxy());
-//            ackIntent.putExtras(bundle);
-//            ackIntent.setAction(BroadCastReceiverConnector.ACTION_RES_CONNECTED);
-//            context.sendBroadcast(ackIntent);
+            ComponentName componentName = new ComponentName(context.getPackageName(), "com.codecacher.wormhole.ChannelReceivera");
+            Intent ackIntent = new Intent();
+            ackIntent.setComponent(componentName);
+            Bundle bundle = new Bundle();
+            bundle.putBinder(BroadCastReceiverConnector.DATA_BINDER, new IPCProxy());
+            bundle.putString(BroadCastReceiverConnector.DATA_PROCESS_NAME, Application.getProcessName());
+            ackIntent.putExtras(bundle);
+            ackIntent.setAction(BroadCastReceiverConnector.ACTION_RES_CONNECTED);
+            context.sendBroadcast(ackIntent);
             return;
         }
         if (BroadCastReceiverConnector.ACTION_RES_CONNECTED.equals(intent.getAction())) {
@@ -37,15 +41,20 @@ public class ChannelReceivera extends ChannelReceiver {
             if (extras == null) {
                 return;
             }
+            String process = extras.getString(BroadCastReceiverConnector.DATA_PROCESS_NAME);
             IBinder binder = extras.getBinder(BroadCastReceiverConnector.DATA_BINDER);
-            if (mCallBack != null) {
-                mCallBack.onConnect(binder);
+            ChannelConnection<IClientChannel> conn = BroadCastReceiverConnector.callBacks.get(process);
+            if (conn != null) {
+                BroadCastReceiverConnector.callBacks.remove(process);
+                IIPCProxy proxy = IIPCProxy.Stub.asInterface(binder);
+                BinderChannel binderChannel = new BinderChannel(proxy);
+                conn.onChannelConnected(binderChannel);
             }
         }
     }
 
-    @Override
-    void setCallBack(ConnectCallBack callBack) {
-        mCallBack = callBack;
-    }
+//    @Override
+//    void setCallBack(ConnectCallBack callBack) {
+//        mCallBack = callBack;
+//    }
 }

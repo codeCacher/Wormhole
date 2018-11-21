@@ -4,8 +4,9 @@ import android.app.Application;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.IBinder;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BroadCastReceiverConnector implements IConnector<ProcessNode, IClientChannel> {
     //cmd action
@@ -17,19 +18,22 @@ public class BroadCastReceiverConnector implements IConnector<ProcessNode, IClie
     public static final String DATA_PROCESS_NAME = "data_process_name";
     public static final String DATA_BINDER = "data_binder";
 
+    public static Map<String, ChannelConnection<IClientChannel>> callBacks = new HashMap<>();
+
     @Override
     public void connect(ProcessNode node, final ChannelConnection<IClientChannel> conn) {
         Context context = Wormhole.getInstance().getContext();
-        ChannelReceiver processReceiver = ProcessHelper.getProcessReceiver();
-        processReceiver.setCallBack(new ConnectCallBack() {
-            @Override
-            public void onConnect(IBinder binder) {
-                IIPCProxy proxy = IIPCProxy.Stub.asInterface(binder);
-                BinderChannel binderChannel = new BinderChannel(proxy);
-                conn.onChannelConnected(binderChannel);
-            }
-        });
-        context.registerReceiver(processReceiver, new IntentFilter());
+//        ChannelReceiver processReceiver = ProcessHelper.getProcessReceiver();
+//        processReceiver.setCallBack(new ConnectCallBack() {
+//            @Override
+//            public void onConnect(IBinder binder) {
+//                IIPCProxy proxy = IIPCProxy.Stub.asInterface(binder);
+//                BinderChannel binderChannel = new BinderChannel(proxy);
+//                conn.onChannelConnected(binderChannel);
+//            }
+//        });
+//        context.registerReceiver(processReceiver, new IntentFilter());
+        callBacks.put(node.getName(), conn);
         //TODO get receiver name from node
         ComponentName componentName = new ComponentName(context.getPackageName(), "com.codecacher.wormhole.ChannelReceiverb");
         Intent intent = new Intent();
