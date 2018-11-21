@@ -1,5 +1,5 @@
 package com.codecacher.wormhole;
 
-public interface IChannel {
-    <T> T getService(Class<T> clazz);
+public interface IChannel<T> extends IClientChannel, IServiceChannel<T> {
+
 }

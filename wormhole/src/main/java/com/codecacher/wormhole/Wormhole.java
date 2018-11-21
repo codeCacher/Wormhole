@@ -1,18 +1,17 @@
 package com.codecacher.wormhole;
 
 import android.content.Context;
-import android.os.IBinder;
 import android.util.SparseArray;
 
 public class Wormhole {
 
-    public static final int CHANNEL_TYPE_SERVICE = 101;
-    public static final int CHANNEL_TYPE_BROADCAST = 102;
+    public static final int CONNECTOR_TYPE_SERVICE = 101;
+    public static final int CONNECTOR_TYPE_BROADCAST = 102;
 
     private static Wormhole INSTANCE = new Wormhole();
 
-    private ServiceManager mManager = new ServiceManager();
-    private SparseArray<IConnector<ProcessNode, IChannel>> connnectors = new SparseArray<>();
+    private SparseArray<IClientChannel> mChannels = new SparseArray<>();
+    private SparseArray<IConnector<ProcessNode, IClientChannel>> connnectors = new SparseArray<>();
     private Context mContext;
 
     public static Wormhole getInstance() {
@@ -30,33 +29,38 @@ public class Wormhole {
         return mContext;
     }
 
-    ServiceManager getServiceManager() {
-        return mManager;
-    }
-
-    //service
-    public void registerService(Class clazz, IBinder binder) {
-        mManager.registerService(clazz, binder);
+    public <V, T extends IServiceChannel<V>, E extends ChannelType<T, V>> IServiceChannel<V> getChannel(E channelType) {
+        IClientChannel channel = mChannels.get(channelType.getType());
+        if (channel != null) {
+            return (T) channel;
+        }
+        switch (channelType.getType()) {
+            case ChannelType.BINDER_CHANNEL_TYPE:
+                channel = new BinderChannel(new IPCProxy());
+                break;
+        }
+        mChannels.put(channelType.getType(), channel);
+        return (T) channel;
     }
 
     //client
-    public void connect(String process, ChannelConnection<IChannel> conn) {
-        connect(process, conn, CHANNEL_TYPE_SERVICE);
+    public void connect(String process, ChannelConnection<IClientChannel> conn) {
+        connect(process, conn, CONNECTOR_TYPE_SERVICE);
     }
 
     //client
-    public void connect(String process, ChannelConnection<IChannel> conn, int channelType) {
-        IConnector<ProcessNode, IChannel> connector = connnectors.get(channelType);
+    public void connect(String process, ChannelConnection<IClientChannel> conn, int channelType) {
+        IConnector<ProcessNode, IClientChannel> connector = connnectors.get(channelType);
         if (connector == null) {
             switch (channelType) {
-                case CHANNEL_TYPE_SERVICE:
+                case CONNECTOR_TYPE_SERVICE:
                     connector = new ServiceConnector();
                     break;
-                case CHANNEL_TYPE_BROADCAST:
+                case CONNECTOR_TYPE_BROADCAST:
                     connector = new BroadCastReceiverConnector();
                     break;
             }
-            connnectors.put(CHANNEL_TYPE_SERVICE, connector);
+            connnectors.put(CONNECTOR_TYPE_SERVICE, connector);
         }
         if (connector != null) {
             connector.connect(new ProcessNode(process), conn);

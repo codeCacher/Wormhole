@@ -7,7 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.IBinder;
 
-public class BroadCastReceiverConnector implements IConnector<ProcessNode, IChannel> {
+public class BroadCastReceiverConnector implements IConnector<ProcessNode, IClientChannel> {
     //cmd action
     private static final String SUFIX = Wormhole.getInstance().getContext().getPackageName();
     public static final String ACTION_REQ_CONNECT = SUFIX + "action_req_connect";
@@ -18,7 +18,7 @@ public class BroadCastReceiverConnector implements IConnector<ProcessNode, IChan
     public static final String DATA_BINDER = "data_binder";
 
     @Override
-    public void connect(ProcessNode node, final ChannelConnection<IChannel> conn) {
+    public void connect(ProcessNode node, final ChannelConnection<IClientChannel> conn) {
         Context context = Wormhole.getInstance().getContext();
         ChannelReceiver processReceiver = ProcessHelper.getProcessReceiver();
         processReceiver.setCallBack(new ConnectCallBack() {

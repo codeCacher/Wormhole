@@ -3,19 +3,22 @@ package com.codecacher.wormhole;
 import android.os.IBinder;
 import android.os.RemoteException;
 
-import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BinderChannel implements IChannel {
+public class BinderChannel implements IChannel<IBinder> {
 
     private IIPCProxy mIPCProxy;
-    private Map<String, IBinder> mBinderCache = new HashMap<>();
-    private Map<String, Object> mServiceCache = new HashMap<>();
 
     BinderChannel(IIPCProxy proxy) {
         this.mIPCProxy = proxy;
     }
+
+    /********************************************Client***********************************************/
+
+    private Map<String, IBinder> mBinderCache = new HashMap<>();
+    private Map<String, Object> mServiceCache = new HashMap<>();
 
     @Override
     public <T> T getService(Class<T> clazz) {
@@ -35,33 +38,44 @@ public class BinderChannel implements IChannel {
                 e.printStackTrace();
             }
         }
-        return asInterface(clazz, binder);
+        T serviceProxy = asInterface(clazz, binder);
+        if (serviceProxy != null) {
+            mServiceCache.put(clazz.getName(), serviceProxy);
+        }
+        return serviceProxy;
     }
 
     private <T> T asInterface(Class<T> clazz, IBinder binder) {
         if ((binder == null)) {
             return null;
         }
-//        android.os.IInterface iin = binder.queryLocalInterface(clazz.getName());
-//        if (((iin != null) && (iin.getClass() == clazz))) {
-//            return ((T) iin);
-//        }
         try {
-            Class proxyClazz = Class.forName(clazz.getName() + "$Stub$Proxy");
-            if (proxyClazz == null) {
+            Class<?> stubClazz = Class.forName(clazz.getName() + "$Stub");
+            if (stubClazz == null) {
                 return null;
             }
-            Constructor constructor = proxyClazz.getDeclaredConstructor(IBinder.class);
-            if (constructor == null) {
+            Method asInterface = stubClazz.getMethod("asInterface", IBinder.class);
+            if (asInterface == null) {
                 return null;
             }
-            constructor.setAccessible(true);
-            T service = (T) constructor.newInstance(binder);
-            mServiceCache.put(clazz.getName(), service);
-            return service;
+            return (T) asInterface.invoke(null, binder);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
+    }
+
+    /********************************************Service***********************************************/
+
+    private Map<String, IBinder> mServiceMap = new HashMap<>();
+
+    @Override
+    public void registerService(Class clazz, IBinder binder) {
+        mServiceMap.put(clazz.getName(), binder);
+    }
+
+    @Override
+    public IBinder getServiceImp(String name) {
+        return mServiceMap.get(name);
     }
 }
