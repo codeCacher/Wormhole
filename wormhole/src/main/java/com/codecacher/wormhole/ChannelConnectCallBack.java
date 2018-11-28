@@ -2,8 +2,11 @@ package com.codecacher.wormhole;
 
 import android.support.annotation.NonNull;
 
-public interface ChannelConnection<T extends IClientChannel> {
+/**
+ * @author cuishun
+ * @since 2018/11/28.
+ */
+interface ChannelConnectCallBack <T extends IClientChannel> {
     void onChannelConnected(@NonNull T channel);
-    void onChannelDisconnected();
     void onConnectFailed(int errorCode);
 }

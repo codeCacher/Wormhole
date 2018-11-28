@@ -2,9 +2,12 @@
     package="com.codecacher.wormhole">
 
     <application>
-        <receiver android:name="com.codecacher.wormhole.ChannelReceivera" />
+        <receiver android:name=".ChannelReceivera" />
         <receiver
-            android:name="com.codecacher.wormhole.ChannelReceiverb"
+            android:name=".ChannelReceiverb"
+            android:process=":b" />
+        <service
+            android:name=".ChannelServiceb"
             android:process=":b" />
     </application>
 </manifest>

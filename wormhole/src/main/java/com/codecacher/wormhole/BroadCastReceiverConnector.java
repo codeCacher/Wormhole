@@ -8,11 +8,11 @@ import android.content.Intent;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BroadCastReceiverConnector implements IConnector<ProcessNode, IClientChannel> {
+public class BroadCastReceiverConnector extends BaseConnector<IClientChannel> {
+
     //cmd action
     private static final String SUFIX = Wormhole.getInstance().getContext().getPackageName();
     public static final String ACTION_REQ_CONNECT = SUFIX + "action_req_connect";
-    public static final String ACTION_RES_CONNECTED = SUFIX + "action_res_connected";
 
     //data
     public static final String DATA_PROCESS_NAME = "data_process_name";
@@ -21,25 +21,30 @@ public class BroadCastReceiverConnector implements IConnector<ProcessNode, IClie
     public static Map<String, ChannelConnection<IClientChannel>> callBacks = new HashMap<>();
 
     @Override
-    public void connect(ProcessNode node, final ChannelConnection<IClientChannel> conn) {
+    public void connect(final String node, final ChannelConnectCallBack<IClientChannel> conn) {
+        super.connect(node, conn);
         Context context = Wormhole.getInstance().getContext();
-//        ChannelReceiver processReceiver = ProcessHelper.getProcessReceiver();
-//        processReceiver.setCallBack(new ConnectCallBack() {
-//            @Override
-//            public void onConnect(IBinder binder) {
-//                IIPCProxy proxy = IIPCProxy.Stub.asInterface(binder);
-//                BinderChannel binderChannel = new BinderChannel(proxy);
-//                conn.onChannelConnected(binderChannel);
-//            }
-//        });
-//        context.registerReceiver(processReceiver, new IntentFilter());
-        callBacks.put(node.getName(), conn);
         //TODO get receiver name from node
         ComponentName componentName = new ComponentName(context.getPackageName(), "com.codecacher.wormhole.ChannelReceiverb");
+
+        final IBinderConnectorImp binderConnector = new IBinderConnectorImp();
+        binderConnector.setRegisterCallBack(node, new IBinderConnectorImp.RegisterCallBack() {
+            @Override
+            public void onRegister(IIPCProxy remoteProxy) {
+                if (remoteProxy == null) {
+                    onConnectFailed(node, ERROR_PROXY_NULL);
+                    return;
+                }
+                BinderChannel binderChannel = new BinderChannel(remoteProxy);
+                onConnected(node, binderChannel);
+            }
+        });
+
         Intent intent = new Intent();
         intent.setComponent(componentName);
         intent.setAction(ACTION_REQ_CONNECT);
-        intent.putExtra(DATA_PROCESS_NAME, Application.getProcessName());
+        intent.putExtra(DATA_PROCESS_NAME, ProcessUtils.getProcessName());
+        intent.putExtra(DATA_BINDER, new BinderWrapper(binderConnector.asBinder()));
         context.sendBroadcast(intent);
     }
 }

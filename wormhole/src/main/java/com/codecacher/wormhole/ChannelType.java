@@ -15,7 +15,7 @@ public class ChannelType<T extends IServiceChannel, V> {
         this.type = type;
     }
 
-    public int getType() {
+    int getType() {
         return type;
     }
 }

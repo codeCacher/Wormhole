@@ -21,9 +21,6 @@
         <service
             android:name="com.codecacher.wormholedemo.BService"
             android:process=":b" />
-        <service
-            android:name="com.codecacher.wormholedemo.ChannelServiceb"
-            android:process=":b" />
     </application>
 
 </manifest>

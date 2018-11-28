@@ -10,8 +10,27 @@ import java.util.Map;
 public class BinderChannel implements IChannel<IBinder> {
 
     private IIPCProxy mIPCProxy;
+    private OnDisconnectListener mDisconnectListener;
+    private boolean mIsChannelAvailable = true;
 
     BinderChannel(IIPCProxy proxy) {
+        try {
+            proxy.asBinder().linkToDeath(new IBinder.DeathRecipient() {
+                @Override
+                public void binderDied() {
+                    mIsChannelAvailable = false;
+                    if (mDisconnectListener != null) {
+                        mDisconnectListener.onDisconnect();
+                    }
+                }
+            }, 0);
+        } catch (RemoteException e) {
+            mIsChannelAvailable = false;
+            if (mDisconnectListener != null) {
+                mDisconnectListener.onDisconnect();
+            }
+            e.printStackTrace();
+        }
         this.mIPCProxy = proxy;
     }
 
@@ -43,6 +62,14 @@ public class BinderChannel implements IChannel<IBinder> {
             mServiceCache.put(clazz.getName(), serviceProxy);
         }
         return serviceProxy;
+    }
+
+    @Override
+    public void setOnDisconnectListener(OnDisconnectListener listener) {
+        this.mDisconnectListener = listener;
+        if (!mIsChannelAvailable) {
+            listener.onDisconnect();
+        }
     }
 
     private <T> T asInterface(Class<T> clazz, IBinder binder) {
@@ -77,5 +104,10 @@ public class BinderChannel implements IChannel<IBinder> {
     @Override
     public IBinder getServiceImp(String name) {
         return mServiceMap.get(name);
+    }
+
+    //TODO 有没有更好的方式获取？
+    public IIPCProxy getIPCProxy() {
+        return mIPCProxy;
     }
 }

@@ -7,14 +7,15 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
 import com.codecacher.wormhole.ChannelConnection;
-import com.codecacher.wormhole.ConnectorType;
 import com.codecacher.wormhole.IClientChannel;
+import com.codecacher.wormhole.ProcessUtils;
 import com.codecacher.wormhole.Wormhole;
 
 public class MainActivity extends AppCompatActivity {
@@ -42,9 +43,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 final long start = SystemClock.elapsedRealtime();
-                Wormhole.getInstance().connect(Application.getProcessName() + ":b", new ChannelConnection<IClientChannel>() {
+                Wormhole.getInstance().connect(ProcessUtils.getProcessName() + ":b", new ChannelConnection<IClientChannel>() {
                     @Override
-                    public void onChannelConnected(IClientChannel channel) {
+                    public void onChannelConnected(@NonNull IClientChannel channel) {
                         long duration = SystemClock.elapsedRealtime() - start;
                         Log.e("cuishun", "duration:" + duration);
                         binderChannel = channel;
@@ -65,7 +66,12 @@ public class MainActivity extends AppCompatActivity {
                     public void onChannelDisconnected() {
                         binderChannel = null;
                     }
-                }, ConnectorType.SERVICE_CONNECTOR);
+
+                    @Override
+                    public void onConnectFailed(int errorCode) {
+
+                    }
+                });
             }
         });
     }
