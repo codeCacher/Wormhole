@@ -4,9 +4,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class BroadCastReceiverConnector extends BaseConnector<IClientChannel> {
 
     //cmd action
@@ -17,11 +14,8 @@ public class BroadCastReceiverConnector extends BaseConnector<IClientChannel> {
     public static final String DATA_PROCESS_NAME = "data_process_name";
     public static final String DATA_BINDER = "data_binder";
 
-    public static Map<String, ChannelConnection<IClientChannel>> callBacks = new HashMap<>();
-
     @Override
-    public void connect(final String node, final ChannelConnectCallBack<IClientChannel> conn) {
-        super.connect(node, conn);
+    void connect(final String node) {
         Context context = Wormhole.getInstance().getContext();
         ComponentName componentName = ProcessUtils.getReceiverComponent(context, node);
 
@@ -44,5 +38,10 @@ public class BroadCastReceiverConnector extends BaseConnector<IClientChannel> {
         intent.putExtra(DATA_PROCESS_NAME, ProcessUtils.getProcessName());
         intent.putExtra(DATA_BINDER, new BinderWrapper(binderConnector.asBinder()));
         context.sendBroadcast(intent);
+    }
+
+    @Override
+    void configRetryOption(RetryOption mRetryOption) {
+        //use default retry option
     }
 }

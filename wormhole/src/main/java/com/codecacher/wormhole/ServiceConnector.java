@@ -6,11 +6,10 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 
-public class ServiceConnector extends BaseConnector<IClientChannel> {
+class ServiceConnector extends BaseConnector<IClientChannel> {
 
     @Override
-    public void connect(final String node, final ChannelConnectCallBack<IClientChannel> conn) {
-        super.connect(node, conn);
+    void connect(final String node) {
         Context context = Wormhole.getInstance().getContext();
         ComponentName componentName = ProcessUtils.getServiceComponent(context, node);
         Intent intent = new Intent();
@@ -32,5 +31,13 @@ public class ServiceConnector extends BaseConnector<IClientChannel> {
                 //use linkToDeath,do nothing
             }
         }, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    void configRetryOption(RetryOption mRetryOption) {
+        //service only connect once
+        mRetryOption.RETRY_TIMES = 0;
+        mRetryOption.RETRY_INTERVAL = 0;
+        mRetryOption.RETRY_TIME_OUT = 3000;
     }
 }
