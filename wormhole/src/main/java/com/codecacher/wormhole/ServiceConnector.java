@@ -12,8 +12,7 @@ public class ServiceConnector extends BaseConnector<IClientChannel> {
     public void connect(final String node, final ChannelConnectCallBack<IClientChannel> conn) {
         super.connect(node, conn);
         Context context = Wormhole.getInstance().getContext();
-        //TODO get service name from node
-        ComponentName componentName = new ComponentName(context.getPackageName(), "com.codecacher.wormhole.ChannelServiceb");
+        ComponentName componentName = ProcessUtils.getServiceComponent(context, node);
         Intent intent = new Intent();
         intent.setComponent(componentName);
         context.bindService(intent, new ServiceConnection() {

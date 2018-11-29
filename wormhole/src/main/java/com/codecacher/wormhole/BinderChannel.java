@@ -106,7 +106,6 @@ public class BinderChannel implements IChannel<IBinder> {
         return mServiceMap.get(name);
     }
 
-    //TODO 有没有更好的方式获取？
     public IIPCProxy getIPCProxy() {
         return mIPCProxy;
     }

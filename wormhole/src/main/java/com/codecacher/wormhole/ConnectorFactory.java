@@ -13,7 +13,7 @@ class ConnectorFactory {
             case BROADCAST_CONNECTOR:
                 return new ServiceConnector();
             case SERVICE_CONNECTOR:
-            case SERVICE_CONNECTOR_BIND:
+//            case SERVICE_CONNECTOR_BIND:
                 return new BroadCastReceiverConnector();
         }
         return null;

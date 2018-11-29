@@ -1,6 +1,5 @@
 package com.codecacher.wormhole;
 
-import android.app.Application;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -24,8 +23,7 @@ public class BroadCastReceiverConnector extends BaseConnector<IClientChannel> {
     public void connect(final String node, final ChannelConnectCallBack<IClientChannel> conn) {
         super.connect(node, conn);
         Context context = Wormhole.getInstance().getContext();
-        //TODO get receiver name from node
-        ComponentName componentName = new ComponentName(context.getPackageName(), "com.codecacher.wormhole.ChannelReceiverb");
+        ComponentName componentName = ProcessUtils.getReceiverComponent(context, node);
 
         final IBinderConnectorImp binderConnector = new IBinderConnectorImp();
         binderConnector.setRegisterCallBack(node, new IBinderConnectorImp.RegisterCallBack() {

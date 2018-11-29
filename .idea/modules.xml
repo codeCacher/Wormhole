@@ -4,9 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Wormhole.iml" filepath="$PROJECT_DIR$/Wormhole.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://E:\CS\Wormhole\app\app.iml" filepath="E:\CS\Wormhole\app\app.iml" />
       <module fileurl="file://$PROJECT_DIR$/wormhole/wormhole.iml" filepath="$PROJECT_DIR$/wormhole/wormhole.iml" />
-      <module fileurl="file://E:\CS\Wormhole\wormhole\wormhole.iml" filepath="E:\CS\Wormhole\wormhole\wormhole.iml" />
     </modules>
   </component>
 </project>

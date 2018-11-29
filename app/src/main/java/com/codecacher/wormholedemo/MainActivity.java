@@ -1,15 +1,14 @@
 package com.codecacher.wormholedemo;
 
-import android.app.Application;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
@@ -20,7 +19,8 @@ import com.codecacher.wormhole.Wormhole;
 
 public class MainActivity extends AppCompatActivity {
 
-    IClientChannel binderChannel = null;
+    private IClientChannel binderChannel = null;
+    private long start;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,8 +42,9 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.getService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                final long start = SystemClock.elapsedRealtime();
-                Wormhole.getInstance().connect(ProcessUtils.getProcessName() + ":b", new ChannelConnection<IClientChannel>() {
+                String process = ProcessUtils.getProcessName() + ":b";
+                start = SystemClock.elapsedRealtime();
+                Wormhole.getInstance().addConnectListener(process, new ChannelConnection<IClientChannel>() {
                     @Override
                     public void onChannelConnected(@NonNull IClientChannel channel) {
                         long duration = SystemClock.elapsedRealtime() - start;
@@ -72,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                 });
+                Wormhole.getInstance().connect(process);
             }
         });
     }
