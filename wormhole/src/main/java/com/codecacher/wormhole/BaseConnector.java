@@ -2,15 +2,18 @@ package com.codecacher.wormhole;
 
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import io.reactivex.Emitter;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
 
 /**
  * @author cuishun
@@ -20,14 +23,14 @@ public abstract class BaseConnector<T extends IClientChannel> implements IConnec
 
     //retry option
     private RetryOption mRetryOption;
-    private Emitter<Object> mEmitter;
 
     //error code
     static final int ERROR_TIME_OUT = 13;
     static final int ERROR_PROXY_NULL = 14;
 
-    private Map<String, Integer> mConnectStates = new HashMap<>();
-    private Map<String, ChannelConnectCallBack<T>> mCallBacks = new HashMap<>();
+    private final Map<String, Integer> mConnectStates = new ConcurrentHashMap<>();
+    private final Map<String, ChannelConnectCallBack<T>> mCallBacks = new ConcurrentHashMap<>();
+    private final Map<String, ObservableEmitter<T>> mEmitters = new HashMap<>();
 
     public BaseConnector() {
         mRetryOption = new RetryOption();
@@ -39,15 +42,50 @@ public abstract class BaseConnector<T extends IClientChannel> implements IConnec
     public void connect(final String node, ChannelConnectCallBack<T> conn) {
         mConnectStates.put(node, CONNECT_STATE_CONNECTING);
         mCallBacks.put(node, conn);
-        Observable.create(new ObservableOnSubscribe<Object>() {
+        Observable.create(new ObservableOnSubscribe<T>() {
             @Override
-            public void subscribe(ObservableEmitter<Object> emitter) throws Exception {
-                mEmitter = emitter;
+            public void subscribe(ObservableEmitter<T> emitter) throws Exception {
+                mEmitters.put(node, emitter);
+                Log.i(Constants.TAG, this.getClass().getSimpleName() + " connect " + node);
                 connect(node);
             }
-        }).retryWhen(new RetryWithDelay(mRetryOption.RETRY_TIMES, mRetryOption.RETRY_INTERVAL))
-                .timeout(mRetryOption.RETRY_TIME_OUT, TimeUnit.MILLISECONDS)
-                .subscribe();
+        }).timeout(mRetryOption.RETRY_TIME_OUT, TimeUnit.MILLISECONDS)
+                .retryWhen(new RetryWithDelay(mRetryOption.RETRY_TIMES, mRetryOption.RETRY_INTERVAL))
+                .subscribe(new Observer<T>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onNext(T channel) {
+                        ChannelConnectCallBack<T> callBack = mCallBacks.get(node);
+                        if (callBack != null) {
+                            callBack.onChannelConnected(channel);
+                            mCallBacks.remove(node);
+                        }
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e(Constants.TAG, this.getClass().getSimpleName() + " connect onError:" + e);
+                        mConnectStates.put(node, CONNECT_STATE_UNCONNECT);
+                        int error = ERROR_TIME_OUT;
+                        if (e instanceof ConnFailThrowable) {
+                            error = ((ConnFailThrowable) e).getErrorCode();
+                        }
+                        ChannelConnectCallBack<T> callBack = mCallBacks.get(node);
+                        if (callBack != null) {
+                            callBack.onConnectFailed(error);
+                            mCallBacks.remove(node);
+                        }
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
     }
 
     abstract void connect(String node);
@@ -64,30 +102,26 @@ public abstract class BaseConnector<T extends IClientChannel> implements IConnec
     }
 
     void onConnected(String node, @NonNull T channel) {
+        Log.i(Constants.TAG, this.getClass().getSimpleName() + " onConnected process:" + node);
         mConnectStates.put(node, CONNECT_STATE_CONNECTED);
-        if (mEmitter == null) {
+        ObservableEmitter<T> emitter = mEmitters.get(node);
+        if (emitter == null) {
             throw new IllegalStateException("you should call onConnected() in connect(String process) method!");
         }
-        mEmitter.onComplete();
-        for (String key : mCallBacks.keySet()) {
-            if (!key.equals(node)) {
-                continue;
-            }
-            mCallBacks.get(key).onChannelConnected(channel);
+        if (!emitter.isDisposed()) {
+            emitter.onNext(channel);
+            emitter.onComplete();
         }
     }
 
     void onConnectFailed(String node, int errorCode) {
-        mConnectStates.put(node, CONNECT_STATE_UNCONNECT);
-        if (mEmitter == null) {
+        Log.i(Constants.TAG, this.getClass().getSimpleName() + " onConnectFailed process:" + node + " error:" + errorCode);
+        ObservableEmitter<T> emitter = mEmitters.get(node);
+        if (emitter == null) {
             throw new IllegalStateException("you should call onConnectFailed() in connect(String process) method!");
         }
-        mEmitter.onError(new Throwable("onConnectFailed errorCode:" + errorCode));
-        for (String key : mCallBacks.keySet()) {
-            if (!key.equals(node)) {
-                continue;
-            }
-            mCallBacks.get(key).onConnectFailed(errorCode);
+        if (!emitter.isDisposed()) {
+            emitter.onError(new ConnFailThrowable(errorCode));
         }
     }
 
@@ -95,6 +129,18 @@ public abstract class BaseConnector<T extends IClientChannel> implements IConnec
         //retry config
         int RETRY_TIMES = 2;
         int RETRY_INTERVAL = 100;
-        int RETRY_TIME_OUT = 3000;
+        int RETRY_TIME_OUT = 1000;
+    }
+
+    static class ConnFailThrowable extends Throwable {
+        private int mErrorCode;
+
+        ConnFailThrowable(int errorCode) {
+            this.mErrorCode = errorCode;
+        }
+
+        int getErrorCode() {
+            return mErrorCode;
+        }
     }
 }

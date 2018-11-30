@@ -7,6 +7,7 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.util.SparseArray;
 
 import java.util.ArrayList;
@@ -106,24 +107,28 @@ public class Wormhole {
 
     //client
     public void connect(String process) {
-        connect(process, ConnectorType.BROADCAST_CONNECTOR, false);
+        connect(process, false);
     }
 
     //client
     public void connect(String process, boolean bind) {
-        connect(process, ConnectorType.BROADCAST_CONNECTOR, bind);
+        if (bind) {
+            connect(process, ConnectorType.SERVICE_CONNECTOR);
+        } else {
+            connect(process, ConnectorType.BROADCAST_CONNECTOR);
+        }
     }
 
     //client
     //TODO 对外提供多种连接选择？
-    private synchronized void connect(final String process, ConnectorType connectorType, boolean bind) {
+    private synchronized void connect(final String process, ConnectorType connectorType) {
         checkProcess(process);
 
         //检查通道是否已连接或正在连接
         IClientChannel clientChannel = mClientChannels.get(process);
         if (clientChannel != null || isConnectingProcess(process)) {
             //已连接或正在连接则直接返回
-            if (connectorType == ConnectorType.BROADCAST_CONNECTOR && bind) {
+            if (connectorType == ConnectorType.SERVICE_CONNECTOR) {
                 bindService(process);
             }
             return;
@@ -133,19 +138,22 @@ public class Wormhole {
         IConnector<IClientChannel> connector = mConnectors.get(connectorType.getType());
         if (connector == null) {
             connector = mConnectorFactory.create(connectorType);
-            mConnectors.put(CONNECTOR_TYPE_SERVICE, connector);
+            mConnectors.put(connectorType.getType(), connector);
         }
         if (connector.getConnectState(process) != IConnector.CONNECT_STATE_UNCONNECT) {
+            Log.i(Constants.TAG, process + " is connecting return");
             return;
         }
         connector.connect(process, new ChannelConnectCallBack<IClientChannel>() {
             @Override
             public void onChannelConnected(@NonNull IClientChannel channel) {
+                Log.i(Constants.TAG, "Wormhole onChannelConnected");
                 mClientChannels.put(process, channel);
                 notifyChannelConnected(process, channel);
                 channel.setOnDisconnectListener(new IClientChannel.OnDisconnectListener() {
                     @Override
                     public void onDisconnect() {
+                        Log.i(Constants.TAG, "Wormhole onChannelDisconnect");
                         mClientChannels.remove(process);
                         notifyChannelDisConnect(process);
                     }
@@ -154,6 +162,7 @@ public class Wormhole {
 
             @Override
             public void onConnectFailed(int errorCode) {
+                Log.i(Constants.TAG, "Wormhole onConnectFailed error:" + errorCode);
                 notifyChannelConnectFailed(process, errorCode);
             }
         });

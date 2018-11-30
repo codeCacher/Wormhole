@@ -11,10 +11,9 @@ class ConnectorFactory {
     IConnector<IClientChannel> create(ConnectorType type) {
         switch (type) {
             case BROADCAST_CONNECTOR:
-                return new ServiceConnector();
-            case SERVICE_CONNECTOR:
-//            case SERVICE_CONNECTOR_BIND:
                 return new BroadCastReceiverConnector();
+            case SERVICE_CONNECTOR:
+                return new ServiceConnector();
         }
         return null;
     }

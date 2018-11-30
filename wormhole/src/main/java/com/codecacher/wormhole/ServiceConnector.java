@@ -19,7 +19,7 @@ class ServiceConnector extends BaseConnector<IClientChannel> {
             public void onServiceConnected(ComponentName name, IBinder service) {
                 IIPCProxy proxy = IIPCProxy.Stub.asInterface(service);
                 if (proxy == null) {
-                    onConnectFailed(node, ERROR_TIME_OUT);
+                    onConnectFailed(node, ERROR_PROXY_NULL);
                     return;
                 }
                 BinderChannel binderChannel = new BinderChannel(proxy);
@@ -38,6 +38,6 @@ class ServiceConnector extends BaseConnector<IClientChannel> {
         //service only connect once
         mRetryOption.RETRY_TIMES = 0;
         mRetryOption.RETRY_INTERVAL = 0;
-        mRetryOption.RETRY_TIME_OUT = 3000;
+        mRetryOption.RETRY_TIME_OUT = 2000;
     }
 }
